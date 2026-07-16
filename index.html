@@ -268,7 +268,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, child, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Konfigurasi Firebase dari User
     const firebaseConfig = {
       apiKey: "AIzaSyA1iKrA-puMOwF_70sLDiPYtyp_3BogDYY",
       authDomain: "eagenerator.firebaseapp.com",
@@ -316,7 +315,7 @@
       <div class="table-container">
         <table id="tabel-hasil">
           <tbody id="badan-tabel">
-            <tr><td style="text-align:center; color:#999; padding:40px;">Ketik email dan klik Generate...</td></tr>
+            <tr><td style="text-align:center; color:#999; padding:40px;">Ketik email dan klik Generate ATAU klik "Impor Sisa Email"...</td></tr>
           </tbody>
         </table>
       </div>
@@ -393,7 +392,7 @@
     <p style="font-size: 11px; color: #e91e63; margin: 0 0 5px 0; font-weight:bold;">
       *PENTING: Email yang TIDAK ADA di kotak bawah ini akan otomatis DITANDAI SUDAH DICENTANG.
     </p>
-    <textarea id="areaImpor" placeholder="Tempel daftar email sisa ke sini..."></textarea>
+    <textarea id="areaImpor" placeholder="Tempel daftar email sisa ke sini...&#10;contoh.satu@gmail.com"></textarea>
     
     <div class="btn-group" style="margin-top:15px; margin-bottom:0;">
       <button onclick="prosesImpor()" class="btn-secondary">Proses & Generate</button>
@@ -492,7 +491,6 @@ function simpanDataKeMemori() {
 function muatDataDariMemori(callback) {
   if (!storageKey || !window.get) return;
   
-  // Dengarkan perubahan realtime di Cloud
   if (unsubscribeRealtime) unsubscribeRealtime();
   
   const targetRef = window.ref(window.db, 'email_sessions/' + storageKey);
@@ -617,6 +615,7 @@ function tampilkanHalaman(page) {
         checkedItems.add(k);
         lastCheckedIndex = k; 
         tr.className = "highlight";
+        salinDiamDiam(emailStr); 
       } else {
         checkedItems.delete(k);
         tr.className = "";
@@ -647,7 +646,7 @@ function resetData() {
   
   if (unsubscribeRealtime) unsubscribeRealtime();
 
-  document.getElementById('badan-tabel').innerHTML = '<tr><td style="text-align:center; color:#999; padding:40px;">Ketik email dan klik Generate...</td></tr>';
+  document.getElementById('badan-tabel').innerHTML = '<tr><td style="text-align:center; color:#999; padding:40px;">Ketik email dan klik Generate ATAU klik "Impor Sisa Email"...</td></tr>';
   document.getElementById('info').textContent = "Total: 0 | Halaman: 0/0";
   document.getElementById('paginasi').innerHTML = "";
   document.getElementById('p').value = 0;
@@ -660,15 +659,228 @@ function tutupSemuaModal() {
 }
 
 function gantiLimit() { if (isGenerated) tampilkanHalaman(currentPage); }
-function cariEmail() { /* fungsi pencarian bawaan */ }
-function keCekTerakhir() { /* fungsi last check bawaan */ }
+
+/* --- DIKEMBALIKAN: FITUR PENCARIAN --- */
+function cariEmail() {
+  if (!isGenerated) {
+    alert("Silakan Generate atau Load Data terlebih dahulu sebelum mencari.");
+    return;
+  }
+  
+  var query = document.getElementById('inputCari').value.trim().toLowerCase();
+  if (!query) { alert("Masukkan teks yang ingin dicari."); return; }
+  
+  var targetIndex = getEmailIndex(query, baseName, domain);
+  
+  if (targetIndex === -1) {
+    alert("Pencarian harus berupa email LENGKAP & VALID sesuai kombinasi saat ini.\n(Contoh: " + baseName[0] + "." + baseName.substring(1) + "@" + domain + ")");
+    return;
+  }
+
+  var elLim = document.getElementById('lim').value;
+  var t = hitungTotal();
+  var itemsPerPage = elLim === "all" ? t : parseInt(elLim);
+  var targetPage = Math.floor(targetIndex / itemsPerPage) + 1;
+  
+  if (currentPage !== targetPage) { tampilkanHalaman(targetPage); }
+  
+  setTimeout(() => {
+    var trs = document.getElementById('badan-tabel').getElementsByTagName('tr');
+    for (var i = 0; i < trs.length; i++) {
+      var td = trs[i].getElementsByClassName('col-email')[0];
+      if (td && td.textContent.toLowerCase() === query) {
+        var bgOri = trs[i].style.backgroundColor;
+        trs[i].style.backgroundColor = "#b3d4fc"; 
+        trs[i].scrollIntoView({behavior: "smooth", block: "center"});
+        
+        setTimeout(() => { 
+          trs[i].style.backgroundColor = trs[i].classList.contains("highlight") ? "#ffff00" : ""; 
+        }, 2000);
+        break;
+      }
+    }
+  }, 100);
+}
+
+/* --- DIKEMBALIKAN: FITUR KE CEK TERAKHIR --- */
+function keCekTerakhir() {
+  if (!isGenerated) return;
+
+  var targetIdx = lastCheckedIndex;
+  
+  if (!checkedItems.has(targetIdx)) {
+      if (checkedItems.size === 0) {
+          alert("Belum ada email yang dicentang.");
+          return;
+      }
+      targetIdx = Math.max(...Array.from(checkedItems));
+  }
+
+  var elLim = document.getElementById('lim').value;
+  var t = hitungTotal();
+  var itemsPerPage = elLim === "all" ? t : parseInt(elLim);
+  var targetPage = Math.floor(targetIdx / itemsPerPage) + 1;
+
+  if (currentPage !== targetPage) {
+    tampilkanHalaman(targetPage);
+  }
+
+  var targetEmail = formatEmail(targetIdx);
+
+  setTimeout(() => {
+    var trs = document.getElementById('badan-tabel').getElementsByTagName('tr');
+    for (var i = 0; i < trs.length; i++) {
+      var td = trs[i].getElementsByClassName('col-email')[0];
+      if (td && td.textContent === targetEmail) {
+        var bgOri = trs[i].style.backgroundColor;
+        trs[i].style.backgroundColor = "#b3d4fc";
+        trs[i].scrollIntoView({behavior: "smooth", block: "center"});
+        
+        setTimeout(() => {
+          trs[i].style.backgroundColor = trs[i].classList.contains("highlight") ? "#ffff00" : "";
+        }, 2000);
+        break;
+      }
+    }
+  }, 100);
+}
+
 function bukaModalImpor() { 
   document.getElementById('modalOverlay').style.display = 'block';
   document.getElementById('modalImpor').style.display = 'block';
+  var curEmail = document.getElementById('e').value.trim();
+  document.getElementById('inputImporBase').value = curEmail; 
+  document.getElementById('areaImpor').value = ''; 
 }
+
+/* --- DIKEMBALIKAN & DIPERBAIKI: FITUR PROSES IMPOR KE CLOUD --- */
 function prosesImpor() {
-  /* fungsi impor bawaan yang otomatis memanggil simpanDataKeMemori() */
+  var baseInput = document.getElementById('inputImporBase').value.trim().toLowerCase();
+  if (baseInput === "") { alert("Masukkan email dasar terlebih dahulu."); return; }
+  if (baseInput.indexOf("@") === -1) baseInput += "@gmail.com";
+  
+  var parts = baseInput.split("@");
+  if (parts[1] !== "gmail.com") { alert("Alamat email harus berakhiran @gmail.com"); return; }
+  
+  var bName = parts[0].replace(/\./g, '');
+  var dName = parts[1];
+  if (bName.length < 2) { alert("Nama email terlalu pendek."); return; }
+
+  var teks = document.getElementById('areaImpor').value;
+  var lines = teks.split('\n').map(function(line) {
+    return line.trim().toLowerCase();
+  }).filter(function(line) {
+    return line !== "";
+  });
+  
+  var t = Math.pow(2, bName.length - 1);
+  if (t > 1000000 && !confirm("Total kombinasi sangat besar (" + t + " email). Proses pencocokan mungkin memakan waktu beberapa detik. Lanjut?")) {
+    return;
+  }
+  
+  var uncheckedIndices = new Set();
+  for (var i = 0; i < lines.length; i++) {
+    var idx = getEmailIndex(lines[i], bName, dName);
+    if (idx !== -1) {
+      uncheckedIndices.add(idx);
+    }
+  }
+
+  baseName = bName;
+  domain = dName;
+  var newEmail = baseName + "@" + domain;
+  
+  document.getElementById('e').value = newEmail;
+  currentDisplayedEmail = newEmail;
+  storageKey = baseName + "_" + domain.replace('.', '_'); 
+
+  checkedItems.clear();
+  for (var k = 0; k < t; k++) {
+    if (!uncheckedIndices.has(k)) {
+      checkedItems.add(k);
+    }
+  }
+
+  lastCheckedIndex = checkedItems.size > 0 ? Math.max(...Array.from(checkedItems)) : -1;
+
+  isGenerated = true;
+  currentPage = 1;
+  
+  simpanDataKeMemori(); // Langsung terkirim ke Firebase Cloud
+  tampilkanHalaman(currentPage);
+  tutupSemuaModal();
+  
+  alert("Sinkronisasi Selesai!\n\nTotal Kombinasi Email: " + t + "\nEmail Sisa (Belum Dicentang): " + uncheckedIndices.size + "\nEmail Digunakan (Otomatis Dicentang): " + checkedItems.size);
 }
+
+/* --- DIKEMBALIKAN: SALIN OTOMATIS SAAT CENTANG --- */
+function salinDiamDiam(teks) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(teks).catch(function(){ salinFallback(teks); });
+  } else {
+    salinFallback(teks);
+  }
+}
+function salinFallback(teks) {
+  var ta = document.createElement("textarea");
+  ta.value = teks;
+  ta.style.position = "fixed"; 
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+/* --- DIKEMBALIKAN: EKSPOR IMPOR JSON, TXT, CSV --- */
+function eksporSesi() {
+  if (!isGenerated) { alert("Silakan Generate atau Impor data terlebih dahulu!"); return; }
+  var dataSesi = { email: currentDisplayedEmail, limit: document.getElementById('lim').value, page: currentPage, checked: Array.from(checkedItems) };
+  var blob = new Blob([JSON.stringify(dataSesi)], { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Sesi_GmailDot_" + baseName + ".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+
+function imporSesi(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var dataSesi = JSON.parse(e.target.result);
+      document.getElementById('lim').value = dataSesi.limit || "100";
+      checkedItems = new Set(dataSesi.checked || []);
+      isGenerated = true; currentPage = dataSesi.page || 1;
+      document.getElementById('e').value = dataSesi.email; currentDisplayedEmail = dataSesi.email;
+      if(validasi()) {
+        lastCheckedIndex = checkedItems.size > 0 ? Math.max(...Array.from(checkedItems)) : -1;
+        simpanDataKeMemori(); tampilkanHalaman(currentPage); alert("Data Sesi berhasil dimuat!");
+      }
+    } catch (err) { alert("Gagal membaca file."); }
+    document.getElementById('fileImpor').value = "";
+  };
+  reader.readAsText(file);
+}
+
+function unduhFile(namaFile, konten, tipeMedia) {
+  var a = document.createElement("a"); var blob = new Blob([konten], { type: tipeMedia });
+  a.href = URL.createObjectURL(blob); a.download = namaFile;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); 
+}
+function txt() {
+  if (!validasi()) return; var t = hitungTotal();
+  if (t === 0) { alert("Tidak ada data untuk diunduh."); return; }
+  var a = []; for (var k = 0; k < t; k++) a.push(formatEmail(k));
+  unduhFile("gmail_dot_" + baseName + ".txt", a.join("\n"), "text/plain");
+}
+function csv() {
+  if (!validasi()) return; var t = hitungTotal();
+  if (t === 0) { alert("Tidak ada data untuk diunduh."); return; }
+  var a = ["email"]; for (var k = 0; k < t; k++) a.push(formatEmail(k));
+  unduhFile("gmail_dot_" + baseName + ".csv", a.join("\n"), "text/csv");
+}
+
 function buatTombolPaginasi(totalPages, activePage) {
   var container = document.getElementById('paginasi');
   container.innerHTML = ""; 
@@ -693,6 +905,19 @@ function buatTombolPaginasi(totalPages, activePage) {
     btnNext.disabled = (activePage === totalPages);
     btnNext.onclick = function() { tampilkanHalaman(activePage + 1); };
     container.appendChild(btnNext);
+  }
+
+  // --- MENGEMBALIKAN TOMBOL LAST CEK ---
+  if (isGenerated) {
+    var btnLastCheck = document.createElement('button');
+    btnLastCheck.textContent = "Last Cek";
+    btnLastCheck.style.marginLeft = "auto";
+    btnLastCheck.style.backgroundColor = "#fbbc05"; 
+    btnLastCheck.style.color = "#333";
+    btnLastCheck.style.fontWeight = "bold";
+    btnLastCheck.style.border = "1px solid #d4a000";
+    btnLastCheck.onclick = keCekTerakhir;
+    container.appendChild(btnLastCheck);
   }
 }
 </script>
