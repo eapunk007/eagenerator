@@ -7,7 +7,7 @@
   <style>
     :root {
       --table-font-size: 13px;
-      --table-padding-y: 4px;
+      --table-padding-y: 0px;
     }
 
     body {
@@ -363,9 +363,9 @@
         </div>
         <div>
           <label style="font-size: 12px; font-weight: bold; color: #555; display: flex; justify-content: space-between;">
-            Tinggi Baris (Row): <span id="valRow">4px</span>
+            Tinggi Baris (Row): <span id="valRow">0px</span>
           </label>
-          <input type="range" id="sliderRow" min="0" max="20" value="4" style="width: 100%; margin: 5px 0;" oninput="updateRow(this.value)">
+          <input type="range" id="sliderRow" min="0" max="20" value="0" style="width: 100%; margin: 5px 0;" oninput="updateRow(this.value)">
         </div>
       </div>
       
@@ -616,6 +616,9 @@ function tampilkanHalaman(page) {
         lastCheckedIndex = k; 
         tr.className = "highlight";
         salinDiamDiam(emailStr); 
+        
+        var container = document.querySelector('.table-container');
+        container.scrollTop += tr.offsetHeight; 
       } else {
         checkedItems.delete(k);
         tr.className = "";
@@ -702,7 +705,7 @@ function cariEmail() {
   }, 100);
 }
 
-/* --- DIKEMBALIKAN: FITUR KE CEK TERAKHIR --- */
+/* --- FITUR KE CEK TERAKHIR YANG SUDAH DIMODIFIKASI --- */
 function keCekTerakhir() {
   if (!isGenerated) return;
 
@@ -734,7 +737,12 @@ function keCekTerakhir() {
       if (td && td.textContent === targetEmail) {
         var bgOri = trs[i].style.backgroundColor;
         trs[i].style.backgroundColor = "#b3d4fc";
-        trs[i].scrollIntoView({behavior: "smooth", block: "center"});
+        
+        var container = document.querySelector('.table-container');
+        var trTop = trs[i].offsetTop;
+        var trHeight = trs[i].offsetHeight || 28; 
+        
+        container.scrollTop = trTop - (trHeight * 2);
         
         setTimeout(() => {
           trs[i].style.backgroundColor = trs[i].classList.contains("highlight") ? "#ffff00" : "";
