@@ -7,7 +7,7 @@
   <style>
     :root {
       --table-font-size: 11px;
-      --table-padding-y: 4px;
+      --table-padding-y: 0px; /* Default Tinggi Baris 0px */
     }
 
     body {
@@ -281,7 +281,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Expose ke window agar fungsi bawaan HTML bisa panggil Firebase
     window.db = db;
     window.dbRef = ref(db);
     window.set = set;
@@ -363,9 +362,10 @@
         </div>
         <div>
           <label style="font-size: 12px; font-weight: bold; color: #555; display: flex; justify-content: space-between;">
-            Tinggi Baris (Row): <span id="valRow">4px</span>
+            Tinggi Baris (Row): <span id="valRow">0px</span>
           </label>
-          <input type="range" id="sliderRow" min="0" max="20" value="4" style="width: 100%; margin: 5px 0;" oninput="updateRow(this.value)">
+          <!-- Default Row Slider Set ke 0 -->
+          <input type="range" id="sliderRow" min="0" max="20" value="0" style="width: 100%; margin: 5px 0;" oninput="updateRow(this.value)">
         </div>
       </div>
       
@@ -476,7 +476,6 @@ function formatEmail(mask) {
   return result + "@" + domain;
 }
 
-// --- FUNGSI CLOUD FIREBASE --- //
 function simpanDataKeMemori() {
   if (!storageKey || !window.set) return;
   
@@ -505,11 +504,11 @@ function muatDataDariMemori(callback) {
       lastCheckedIndex = -1;
     }
     if (callback) callback();
-    if (isGenerated) tampilkanHalaman(currentPage);
   });
 }
 
-function gen() {
+// Parameter autoLastCheck ditambahkan untuk mendeteksi pemanggilan dari modal load
+function gen(autoLastCheck = false) {
   if (!validasi()) return;
   
   var newEmail = baseName + "@" + domain;
@@ -519,6 +518,9 @@ function gen() {
 
   muatDataDariMemori(() => {
     tampilkanHalaman(currentPage);
+    if (autoLastCheck && (lastCheckedIndex !== -1 || checkedItems.size > 0)) {
+      keCekTerakhir();
+    }
   });
 }
 
@@ -553,7 +555,7 @@ function buatItemRiwayat(label, keyData) {
   btnLoad.onclick = function() {
     tutupSemuaModal();
     document.getElementById('e').value = label;
-    gen();
+    gen(true); // OOTOMATIS LAST CEK SAAT PILIH EMAIL DARI MODAL
   };
 
   var btnDel = document.createElement('button');
@@ -576,6 +578,7 @@ function tampilkanHalaman(page) {
   var elProg = document.getElementById('p');
   var tbody = document.getElementById('badan-tabel');
   var elInfo = document.getElementById('info');
+  var container = document.querySelector('.table-container');
   
   var t = hitungTotal();
   var limitVal = elLim.value;
@@ -588,6 +591,9 @@ function tampilkanHalaman(page) {
   
   elProg.value = 0;
   tbody.innerHTML = ""; 
+  
+  // RESET SCROLL TABEL KE ATAS SETIAP PERPINDAHAN HALAMAN
+  if (container) container.scrollTop = 0;
   
   var startIndex = (currentPage - 1) * itemsPerPage;
   var endIndex = Math.min(startIndex + itemsPerPage, t);
@@ -660,7 +666,6 @@ function tutupSemuaModal() {
 
 function gantiLimit() { if (isGenerated) tampilkanHalaman(currentPage); }
 
-/* --- DIKEMBALIKAN: FITUR PENCARIAN --- */
 function cariEmail() {
   if (!isGenerated) {
     alert("Silakan Generate atau Load Data terlebih dahulu sebelum mencari.");
@@ -702,7 +707,7 @@ function cariEmail() {
   }, 100);
 }
 
-/* --- DIKEMBALIKAN: FITUR KE CEK TERAKHIR --- */
+/* --- PERBAIKAN: LAST CEK MENAMPILKAN BARIS KE-4 DARI ATAS --- */
 function keCekTerakhir() {
   if (!isGenerated) return;
 
@@ -728,13 +733,20 @@ function keCekTerakhir() {
   var targetEmail = formatEmail(targetIdx);
 
   setTimeout(() => {
+    var container = document.querySelector('.table-container');
     var trs = document.getElementById('badan-tabel').getElementsByTagName('tr');
     for (var i = 0; i < trs.length; i++) {
       var td = trs[i].getElementsByClassName('col-email')[0];
       if (td && td.textContent === targetEmail) {
         var bgOri = trs[i].style.backgroundColor;
         trs[i].style.backgroundColor = "#b3d4fc";
-        trs[i].scrollIntoView({behavior: "smooth", block: "center"});
+        
+        // Posisikan target berada di baris ke-4 (offset 3 baris di atasnya)
+        var offsetIndex = Math.max(0, i - 3);
+        container.scrollTo({
+          top: trs[offsetIndex].offsetTop,
+          behavior: "smooth"
+        });
         
         setTimeout(() => {
           trs[i].style.backgroundColor = trs[i].classList.contains("highlight") ? "#ffff00" : "";
@@ -753,7 +765,6 @@ function bukaModalImpor() {
   document.getElementById('areaImpor').value = ''; 
 }
 
-/* --- DIKEMBALIKAN & DIPERBAIKI: FITUR PROSES IMPOR KE CLOUD --- */
 function prosesImpor() {
   var baseInput = document.getElementById('inputImporBase').value.trim().toLowerCase();
   if (baseInput === "") { alert("Masukkan email dasar terlebih dahulu."); return; }
@@ -806,14 +817,13 @@ function prosesImpor() {
   isGenerated = true;
   currentPage = 1;
   
-  simpanDataKeMemori(); // Langsung terkirim ke Firebase Cloud
+  simpanDataKeMemori(); 
   tampilkanHalaman(currentPage);
   tutupSemuaModal();
   
   alert("Sinkronisasi Selesai!\n\nTotal Kombinasi Email: " + t + "\nEmail Sisa (Belum Dicentang): " + uncheckedIndices.size + "\nEmail Digunakan (Otomatis Dicentang): " + checkedItems.size);
 }
 
-/* --- DIKEMBALIKAN: SALIN OTOMATIS SAAT CENTANG --- */
 function salinDiamDiam(teks) {
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(teks).catch(function(){ salinFallback(teks); });
@@ -821,6 +831,7 @@ function salinDiamDiam(teks) {
     salinFallback(teks);
   }
 }
+
 function salinFallback(teks) {
   var ta = document.createElement("textarea");
   ta.value = teks;
@@ -831,7 +842,6 @@ function salinFallback(teks) {
   document.body.removeChild(ta);
 }
 
-/* --- DIKEMBALIKAN: EKSPOR IMPOR JSON, TXT, CSV --- */
 function eksporSesi() {
   if (!isGenerated) { alert("Silakan Generate atau Impor data terlebih dahulu!"); return; }
   var dataSesi = { email: currentDisplayedEmail, limit: document.getElementById('lim').value, page: currentPage, checked: Array.from(checkedItems) };
@@ -868,12 +878,14 @@ function unduhFile(namaFile, konten, tipeMedia) {
   a.href = URL.createObjectURL(blob); a.download = namaFile;
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); 
 }
+
 function txt() {
   if (!validasi()) return; var t = hitungTotal();
   if (t === 0) { alert("Tidak ada data untuk diunduh."); return; }
   var a = []; for (var k = 0; k < t; k++) a.push(formatEmail(k));
   unduhFile("gmail_dot_" + baseName + ".txt", a.join("\n"), "text/plain");
 }
+
 function csv() {
   if (!validasi()) return; var t = hitungTotal();
   if (t === 0) { alert("Tidak ada data untuk diunduh."); return; }
@@ -907,7 +919,6 @@ function buatTombolPaginasi(totalPages, activePage) {
     container.appendChild(btnNext);
   }
 
-  // --- MENGEMBALIKAN TOMBOL LAST CEK ---
   if (isGenerated) {
     var btnLastCheck = document.createElement('button');
     btnLastCheck.textContent = "Last Cek";
