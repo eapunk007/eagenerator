@@ -1,936 +1,200 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>eApuNk Email Generator & Manager v10 (Online Database)</title>
+  <title>Simulasi Tabel Email</title>
   <style>
-    :root {
-      --table-font-size: 11px;
-      --table-padding-y: 0px; /* Default Tinggi Baris 0px */
-    }
-
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 1200px; 
-      margin: 20px auto;
-      background-color: #f9f9f9;
-      color: #333;
-      padding: 0 15px;
+      font-family: Arial, sans-serif;
+      margin: 20px;
     }
-    h2 {
-      text-align: center;
-      color: #ea4335;
-      margin-bottom: 30px;
-    }
-
-    .main-wrapper {
-      display: flex;
-      gap: 20px;
-      align-items: flex-start;
-    }
-    .left-panel {
-      flex: 2; 
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      min-width: 400px;
-    }
-    .right-panel {
-      flex: 1; 
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      min-width: 300px;
-    }
-
-    input[type="text"], select {
-      width: 100%;
-      box-sizing: border-box;
-      margin: 8px 0 15px 0;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    
-    .search-box {
-      display: flex;
-      gap: 10px;
+    .controls {
       margin-bottom: 15px;
-    }
-    .search-box input {
-      margin: 0; 
-      flex: 1;
-    }
-    .search-box button {
-      flex: none;
-      min-width: 80px;
-      margin: 0;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-    button {
-      flex: 1;
-      min-width: 100px;
-      background-color: #1a73e8;
-      color: white;
-      border: none;
       padding: 10px;
-      cursor: pointer;
-      border-radius: 4px;
-      font-weight: 600;
-      font-size: 13px;
-      transition: background-color 0.2s;
-    }
-    button:hover { background-color: #1557b0; }
-    .btn-secondary { background-color: #34a853; }
-    .btn-secondary:hover { background-color: #2b8c46; }
-    .btn-purple { background-color: #9c27b0; }
-    .btn-purple:hover { background-color: #7b1fa2; }
-    .btn-warning { background-color: #fbbc05; color: #333; }
-    .btn-warning:hover { background-color: #e0a800; }
-    .btn-danger { background-color: #ea4335; }
-    .btn-danger:hover { background-color: #c5221f; }
-    .btn-info { background-color: #00bcd4; }
-    .btn-info:hover { background-color: #0097a7; }
-    
-    progress {
-      width: 100%;
-      height: 10px;
-      margin: 10px 0 20px 0;
+      background-color: #f1f1f1;
       border-radius: 5px;
     }
-    
-    #info {
-      font-size: 14px;
-      font-weight: bold;
-      color: #5f6368;
-      margin-bottom: 15px;
-      text-align: left;
+    button, select {
+      padding: 8px 12px;
+      margin-right: 5px;
+      cursor: pointer;
     }
+    /* Pengaturan Container Tabel */
     .table-container {
-      width: 100%;
-      height: 900px; 
+      height: 350px; /* Tinggi dibatasi agar bisa di-scroll */
       overflow-y: auto;
       border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: #fff;
+      position: relative;
     }
     table {
       width: 100%;
       border-collapse: collapse;
     }
     th, td {
-      padding: var(--table-padding-y) 6px; 
-      border-bottom: 1px solid #ddd;
-      border-right: 1px solid #ddd;
+      border: 1px solid #ddd;
+      padding: 12px; /* Tinggi baris ditentukan oleh padding ini */
       text-align: left;
     }
-    td.col-email {
-      font-family: monospace;
-      font-size: var(--table-font-size); 
-      width: 85%;
+    th {
+      background-color: #007bff;
+      color: white;
+      position: sticky;
+      top: 0; /* Header tetap di atas saat di-scroll */
+      z-index: 1;
     }
-    td.col-check {
-      text-align: center;
-      width: 15%;
-      vertical-align: middle;
+    /* Highlight untuk baris Last Cek */
+    .row-last-cek {
+      background-color: #ffeeba;
+      font-weight: bold;
     }
-    input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
-      cursor: pointer;
-    }
-    
-    tr.highlight { background-color: #ffff00; }
-    tr.highlight td.col-email { color: #cc0000; font-weight: bold; }
-
     .pagination {
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 5px;
-      margin: 0 0 15px 0;
-      flex-wrap: wrap;
+      margin-top: 15px;
     }
     .pagination button {
-      flex: none;
-      min-width: 35px;
-      height: 30px;
-      padding: 0 6px;
-      background-color: #f1f3f4;
-      color: #3c4043;
-      border: 1px solid #dadce0;
-      font-weight: normal;
-      font-size: 12px;
-    }
-    .pagination button:hover { background-color: #e8eaed; color: #1a73e8; }
-    .pagination button.active { background-color: #1a73e8; color: white; border-color: #1a73e8; font-weight: bold; }
-    .pagination button:disabled { background-color: #f8f9fa; color: #c4c7c5; cursor: not-allowed; border-color: #f1f3f4; }
-    .pagination span { padding: 0 5px; color: #70757a; font-weight: bold; }
-
-    @media (max-width: 768px) {
-      .main-wrapper { flex-direction: column-reverse; }
-      .left-panel, .right-panel { width: 100%; min-width: auto; box-sizing: border-box; }
-    }
-
-    #modalOverlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      z-index: 999;
-    }
-    .modal-box {
-      display: none;
-      position: fixed;
-      top: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90%;
-      max-width: 500px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      z-index: 1000;
-    }
-    .modal-box h3 { margin-top: 0; color: #333; font-size: 16px; margin-bottom: 15px;}
-    #areaImpor {
-      width: 100%;
-      height: 180px;
-      box-sizing: border-box;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 12px;
-      resize: vertical;
-    }
-    
-    .list-load {
-      max-height: 250px;
-      overflow-y: auto;
-      margin-bottom: 15px;
-      border: 1px solid #eee;
-      padding: 5px;
-      border-radius: 4px;
-    }
-    .list-item-container {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 5px;
-    }
-    .list-item-container button.load-btn {
-      flex: 1;
-      text-align: left;
-      background-color: #f8f9fa;
-      color: #333;
-      border: 1px solid #ddd;
-      margin-bottom: 0;
-    }
-    .list-item-container button.load-btn:hover { background-color: #e2e6ea; }
-    
-    .list-item-container button.del-btn {
-      flex: none;
-      width: 35px;
-      min-width: 35px;
-      background-color: #ea4335;
+      background-color: #28a745;
       color: white;
       border: none;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-    }
-    .list-item-container button.del-btn:hover { background-color: #c5221f; }
-    
-    #statusCloud {
-      font-size: 11px;
-      text-align: center;
-      color: #34a853;
-      margin-bottom: 10px;
-      font-weight: bold;
+      border-radius: 3px;
     }
   </style>
-
-  <!-- MODUL FIREBASE DATABASE -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyA1iKrA-puMOwF_70sLDiPYtyp_3BogDYY",
-      authDomain: "eagenerator.firebaseapp.com",
-      databaseURL: "https://eagenerator-default-rtdb.asia-southeast1.firebasedatabase.app/",
-      projectId: "eagenerator",
-      storageBucket: "eagenerator.firebasestorage.app",
-      messagingSenderId: "518495301316",
-      appId: "1:518495301316:web:b90c351a099d9bf97ee391"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    window.db = db;
-    window.dbRef = ref(db);
-    window.set = set;
-    window.get = get;
-    window.ref = ref;
-    window.child = child;
-    window.remove = remove;
-    window.onValue = onValue;
-    
-    document.getElementById('statusCloud').textContent = "☁️ Terhubung ke Cloud Database Online";
-  </script>
 </head>
 <body>
 
-  <h2>eApuNk Email Generator & Manager (Online)</h2>
-  <div id="statusCloud">Connecting to Cloud...</div>
-  
-  <div class="main-wrapper">
-    <div class="left-panel">
-      
-      <label style="font-size: 12px; font-weight: bold; color: #666;">Cari Email (Tekan Enter):</label>
-      <div class="search-box">
-        <input type="text" id="inputCari" placeholder="Contoh: ex.ample@gmail.com..." onkeypress="if(event.key === 'Enter') cariEmail()">
-        <button onclick="cariEmail()" class="btn-info">Cari</button>
-      </div>
-
-      <div id="info">Total: 0 | Halaman: 0/0</div>
-      
-      <div id="paginasi" class="pagination"></div>
-      
-      <div class="table-container">
-        <table id="tabel-hasil">
-          <tbody id="badan-tabel">
-            <tr><td style="text-align:center; color:#999; padding:40px;">Ketik email dan klik Generate ATAU klik "Impor Sisa Email"...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="right-panel">
-      <label for="e"><strong>Alamat Gmail Utama:</strong></label>
-      <input id="e" type="text" placeholder="contoh@gmail.com" onkeypress="if(event.key === 'Enter') gen()">
-      
-      <label for="lim"><strong>Jumlah Baris per Halaman:</strong></label>
-      <select id="lim" onchange="gantiLimit()">
-        <option value="100">100 Baris</option>
-        <option value="500">500 Baris</option>
-        <option value="1000" selected>1.000 Baris</option>
-        <option value="all">Tampilkan Semua</option>
-      </select>
-
-      <div class="btn-group">
-        <button onclick="gen()">Generate</button>
-        <button onclick="bukaModalLoad()" class="btn-info">Load Data Online</button>
-      </div>
-      
-      <div class="btn-group">
-        <button onclick="resetData()" class="btn-danger">Kosongkan Layar</button>
-      </div>
-
-      <div class="btn-group" style="margin-top: 10px;">
-        <button onclick="bukaModalImpor()" class="btn-purple" style="width: 100%;">Impor Sisa Email (Unchecked)</button>
-      </div>
-
-      <hr style="border: 0; height: 1px; background: #eee; margin: 15px 0;">
-
-      <div class="btn-group">
-        <button onclick="eksporSesi()" class="btn-warning">Ekspor Sesi (.json)</button>
-        <button onclick="document.getElementById('fileImpor').click()" class="btn-warning">Impor Sesi (.json)</button>
-        <input type="file" id="fileImpor" style="display:none" accept=".json" onchange="imporSesi(event)">
-      </div>
-
-      <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e0e0e0; margin-top: 15px;">
-        <div style="margin-bottom: 8px;">
-          <label style="font-size: 12px; font-weight: bold; color: #555; display: flex; justify-content: space-between;">
-            Ukuran Font: <span id="valFont">13px</span>
-          </label>
-          <input type="range" id="sliderFont" min="10" max="24" value="13" style="width: 100%; margin: 5px 0;" oninput="updateFont(this.value)">
-        </div>
-        <div>
-          <label style="font-size: 12px; font-weight: bold; color: #555; display: flex; justify-content: space-between;">
-            Tinggi Baris (Row): <span id="valRow">0px</span>
-          </label>
-          <!-- Default Row Slider Set ke 0 -->
-          <input type="range" id="sliderRow" min="0" max="20" value="0" style="width: 100%; margin: 5px 0;" oninput="updateRow(this.value)">
-        </div>
-      </div>
-      
-      <label style="font-size: 12px; color: #666; display: block; margin-top: 15px;">Proses Generasi / Load:</label>
-      <progress id="p" value="0" max="100"></progress>
-      
-      <hr style="border: 0; height: 1px; background: #eee; margin: 10px 0 15px 0;">
-
-      <div class="btn-group">
-        <button onclick="txt()">Unduh TXT</button>
-        <button onclick="csv()">Unduh CSV</button>
-      </div>
-    </div>
+  <div class="controls">
+    <select id="select-email">
+      <option value="email_a@gmail.com">email_a@gmail.com</option>
+      <option value="email_b@gmail.com">email_b@gmail.com</option>
+    </select>
+    
+    <!-- Tombol Aksi -->
+    <button onclick="loadDataOnline()" style="background-color: #007bff; color: white; border:none;">Load Data Online</button>
+    <button onclick="aksiCekList()">Cek List (Aksi Lokal)</button>
+    <button onclick="scrollToLastCek()">Cari Posisi Last Cek</button>
   </div>
 
-  <div id="modalOverlay" onclick="tutupSemuaModal()"></div>
-
-  <div id="modalImpor" class="modal-box">
-    <h3>Sinkronisasi Daftar Email Sisa</h3>
-    <label style="font-size: 12px; font-weight: bold; color: #666;">1. Email Dasar (Base Email):</label>
-    <input type="text" id="inputImporBase" placeholder="contoh@gmail.com" style="margin-bottom:15px;">
-    
-    <label style="font-size: 12px; font-weight: bold; color: #666;">2. Daftar Email Sisa (Belum Digunakan):</label>
-    <p style="font-size: 11px; color: #e91e63; margin: 0 0 5px 0; font-weight:bold;">
-      *PENTING: Email yang TIDAK ADA di kotak bawah ini akan otomatis DITANDAI SUDAH DICENTANG.
-    </p>
-    <textarea id="areaImpor" placeholder="Tempel daftar email sisa ke sini...&#10;contoh.satu@gmail.com"></textarea>
-    
-    <div class="btn-group" style="margin-top:15px; margin-bottom:0;">
-      <button onclick="prosesImpor()" class="btn-secondary">Proses & Generate</button>
-      <button onclick="tutupSemuaModal()" class="btn-danger">Batal</button>
-    </div>
+  <!-- Container Tabel -->
+  <div class="table-container" id="table-container">
+    <table id="myTable">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Data Email</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- Default Kosong (0 Baris) saat pertama dibuka -->
+      </tbody>
+    </table>
   </div>
 
-  <div id="modalLoad" class="modal-box">
-    <h3>Riwayat Data Cloud Online:</h3>
-    <div id="listRiwayat" class="list-load"></div>
-    <div class="btn-group" style="margin-top:15px; margin-bottom:0;">
-      <button onclick="tutupSemuaModal()" class="btn-secondary">Tutup</button>
-    </div>
+  <!-- Pagination -->
+  <div class="pagination">
+    <button onclick="changePage('prev')">Prev</button>
+    <button onclick="changePage(1)">1</button>
+    <button onclick="changePage(2)">2</button>
+    <button onclick="changePage(3)">3</button>
+    <button onclick="changePage('next')">Next</button>
   </div>
 
-<script>
-var baseName = "";
-var domain = "";
-var currentPage = 1;
-var isGenerated = false;
-var storageKey = ""; 
-var checkedItems = new Set();
-var currentDisplayedEmail = ""; 
-var lastCheckedIndex = -1; 
-var unsubscribeRealtime = null;
+  <script>
+    let currentPage = 1;
+    let lastCekRowId = 25; // Simulasi: Anggap data ke-25 adalah yang terakhir dicek
 
-function updateFont(val) {
-  document.getElementById('valFont').textContent = val + "px";
-  document.documentElement.style.setProperty('--table-font-size', val + 'px');
-}
+    // Fungsi Render Tabel (Membuat Data Dummy)
+    function renderTableData(isOnlineLoad = false) {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = ''; // Kosongkan tabel
+      
+      const email = document.getElementById('select-email').value;
 
-function updateRow(val) {
-  document.getElementById('valRow').textContent = val + "px";
-  document.documentElement.style.setProperty('--table-padding-y', val + 'px');
-}
-
-function getEmailIndex(queryEmail, bName, dName) {
-  var parts = queryEmail.toLowerCase().split('@');
-  if (parts.length !== 2 || parts[1] !== dName) return -1;
-  var qBase = parts[0].replace(/\./g, '');
-  if (qBase !== bName) return -1;
-
-  var rawName = parts[0];
-  var mask = 0;
-  var baseIdx = 0;
-  for (var i = 0; i < rawName.length - 1; i++) {
-    if (rawName[i] !== '.') {
-      if (rawName[i+1] === '.') { mask |= (1 << baseIdx); }
-      baseIdx++;
-    }
-  }
-  return mask;
-}
-
-function validasi() {
-  var elInput = document.getElementById('e');
-  var val = elInput.value.trim().toLowerCase();
-  
-  if (val === "") { alert("Harap masukkan alamat email terlebih dahulu."); return false; }
-  if (val.indexOf("@") === -1) { val += "@gmail.com"; elInput.value = val; }
-  
-  var parts = val.split("@");
-  if (parts[1] !== "gmail.com") { alert("Alamat email harus berakhiran @gmail.com"); return false; }
-  
-  baseName = parts[0].replace(/\./g, ''); 
-  domain = parts[1];
-  storageKey = baseName + "_" + domain.replace('.', '_'); 
-  
-  if (baseName.length < 2) { alert("Nama email terlalu pendek."); return false; }
-  return true;
-}
-
-function hitungTotal() { return Math.pow(2, baseName.length - 1); }
-
-function formatEmail(mask) {
-  var result = baseName[0];
-  for (var x = 1; x < baseName.length; x++) {
-    if (mask & (1 << (x - 1))) result += ".";
-    result += baseName[x];
-  }
-  return result + "@" + domain;
-}
-
-function simpanDataKeMemori() {
-  if (!storageKey || !window.set) return;
-  
-  var dataToSave = {
-    checked: Array.from(checkedItems),
-    lastIndex: lastCheckedIndex
-  };
-  
-  window.set(window.ref(window.db, 'email_sessions/' + storageKey), dataToSave);
-}
-
-function muatDataDariMemori(callback) {
-  if (!storageKey || !window.get) return;
-  
-  if (unsubscribeRealtime) unsubscribeRealtime();
-  
-  const targetRef = window.ref(window.db, 'email_sessions/' + storageKey);
-  
-  unsubscribeRealtime = window.onValue(targetRef, (snapshot) => {
-    if (snapshot.exists()) {
-      var val = snapshot.val();
-      checkedItems = new Set(val.checked || []);
-      lastCheckedIndex = val.lastIndex !== undefined ? val.lastIndex : -1;
-    } else {
-      checkedItems.clear();
-      lastCheckedIndex = -1;
-    }
-    if (callback) callback();
-  });
-}
-
-// Parameter autoLastCheck ditambahkan untuk mendeteksi pemanggilan dari modal load
-function gen(autoLastCheck = false) {
-  if (!validasi()) return;
-  
-  var newEmail = baseName + "@" + domain;
-  isGenerated = true;
-  currentPage = 1; 
-  currentDisplayedEmail = newEmail; 
-
-  muatDataDariMemori(() => {
-    tampilkanHalaman(currentPage);
-    if (autoLastCheck && (lastCheckedIndex !== -1 || checkedItems.size > 0)) {
-      keCekTerakhir();
-    }
-  });
-}
-
-function bukaModalLoad() {
-  var container = document.getElementById('listRiwayat');
-  container.innerHTML = "Memuat data dari cloud...";
-  
-  document.getElementById('modalOverlay').style.display = 'block';
-  document.getElementById('modalLoad').style.display = 'block';
-
-  window.get(window.child(window.dbRef, 'email_sessions')).then((snapshot) => {
-    container.innerHTML = "";
-    if (snapshot.exists()) {
-      var data = snapshot.val();
-      for (var key in data) {
-        var cleanLabel = key.replace('_gmail_com', '@gmail.com');
-        container.appendChild(buatItemRiwayat(cleanLabel, key));
-      }
-    } else {
-      container.innerHTML = "<p style='font-size:13px; color:#666; text-align:center;'>Belum ada riwayat online.</p>";
-    }
-  });
-}
-
-function buatItemRiwayat(label, keyData) {
-  var div = document.createElement('div');
-  div.className = "list-item-container";
-
-  var btnLoad = document.createElement('button');
-  btnLoad.className = "load-btn";
-  btnLoad.textContent = label;
-  btnLoad.onclick = function() {
-    tutupSemuaModal();
-    document.getElementById('e').value = label;
-    gen(true); // OOTOMATIS LAST CEK SAAT PILIH EMAIL DARI MODAL
-  };
-
-  var btnDel = document.createElement('button');
-  btnDel.className = "del-btn";
-  btnDel.innerHTML = "&#10006;"; 
-  btnDel.onclick = function() {
-    if (confirm("Hapus data '" + label + "' dari Database Online?")) {
-      window.remove(window.ref(window.db, 'email_sessions/' + keyData));
-      div.remove();
-    }
-  };
-
-  div.appendChild(btnLoad);
-  div.appendChild(btnDel);
-  return div;
-}
-
-function tampilkanHalaman(page) {
-  var elLim = document.getElementById('lim');
-  var elProg = document.getElementById('p');
-  var tbody = document.getElementById('badan-tabel');
-  var elInfo = document.getElementById('info');
-  var container = document.querySelector('.table-container');
-  
-  var t = hitungTotal();
-  var limitVal = elLim.value;
-  var itemsPerPage = limitVal === "all" ? t : parseInt(limitVal);
-  var totalPages = Math.ceil(t / itemsPerPage) || 1;
-  
-  if (page < 1) page = 1;
-  if (page > totalPages) page = totalPages;
-  currentPage = page;
-  
-  elProg.value = 0;
-  tbody.innerHTML = ""; 
-  
-  // RESET SCROLL TABEL KE ATAS SETIAP PERPINDAHAN HALAMAN
-  if (container) container.scrollTop = 0;
-  
-  var startIndex = (currentPage - 1) * itemsPerPage;
-  var endIndex = Math.min(startIndex + itemsPerPage, t);
-  
-  for (let k = startIndex; k < endIndex; k++) {
-    let emailStr = formatEmail(k);
-    let isChecked = checkedItems.has(k);
-    
-    let tr = document.createElement('tr');
-    if (isChecked) tr.className = "highlight";
-    
-    let tdEmail = document.createElement('td');
-    tdEmail.className = "col-email";
-    tdEmail.textContent = emailStr;
-    
-    let tdCheck = document.createElement('td');
-    tdCheck.className = "col-check";
-    
-    let cb = document.createElement('input');
-    cb.type = "checkbox";
-    cb.checked = isChecked;
-    
-    cb.onchange = function() {
-      if (this.checked) {
-        checkedItems.add(k);
-        lastCheckedIndex = k; 
-        tr.className = "highlight";
-        salinDiamDiam(emailStr); 
-      } else {
-        checkedItems.delete(k);
-        tr.className = "";
-      }
-      simpanDataKeMemori(); 
-    };
-    
-    tdCheck.appendChild(cb);
-    tr.appendChild(tdEmail);
-    tr.appendChild(tdCheck);
-    tbody.appendChild(tr);
-  }
-  
-  elProg.value = 100;
-  elInfo.textContent = "Total Data: " + t.toLocaleString() + " | Menampilkan: " + (t > 0 ? (startIndex + 1).toLocaleString() : 0) + " - " + endIndex.toLocaleString() + " (Hal " + currentPage + "/" + totalPages + ")";
-  
-  buatTombolPaginasi(totalPages, currentPage);
-}
-
-function resetData() {
-  document.getElementById('e').value = "";
-  document.getElementById('inputCari').value = "";
-  checkedItems.clear();
-  isGenerated = false;
-  currentDisplayedEmail = "";
-  baseName = ""; domain = ""; storageKey = "";
-  lastCheckedIndex = -1;
-  
-  if (unsubscribeRealtime) unsubscribeRealtime();
-
-  document.getElementById('badan-tabel').innerHTML = '<tr><td style="text-align:center; color:#999; padding:40px;">Ketik email dan klik Generate ATAU klik "Impor Sisa Email"...</td></tr>';
-  document.getElementById('info').textContent = "Total: 0 | Halaman: 0/0";
-  document.getElementById('paginasi').innerHTML = "";
-  document.getElementById('p').value = 0;
-}
-
-function tutupSemuaModal() {
-  document.getElementById('modalOverlay').style.display = 'none';
-  document.getElementById('modalImpor').style.display = 'none';
-  document.getElementById('modalLoad').style.display = 'none';
-}
-
-function gantiLimit() { if (isGenerated) tampilkanHalaman(currentPage); }
-
-function cariEmail() {
-  if (!isGenerated) {
-    alert("Silakan Generate atau Load Data terlebih dahulu sebelum mencari.");
-    return;
-  }
-  
-  var query = document.getElementById('inputCari').value.trim().toLowerCase();
-  if (!query) { alert("Masukkan teks yang ingin dicari."); return; }
-  
-  var targetIndex = getEmailIndex(query, baseName, domain);
-  
-  if (targetIndex === -1) {
-    alert("Pencarian harus berupa email LENGKAP & VALID sesuai kombinasi saat ini.\n(Contoh: " + baseName[0] + "." + baseName.substring(1) + "@" + domain + ")");
-    return;
-  }
-
-  var elLim = document.getElementById('lim').value;
-  var t = hitungTotal();
-  var itemsPerPage = elLim === "all" ? t : parseInt(elLim);
-  var targetPage = Math.floor(targetIndex / itemsPerPage) + 1;
-  
-  if (currentPage !== targetPage) { tampilkanHalaman(targetPage); }
-  
-  setTimeout(() => {
-    var trs = document.getElementById('badan-tabel').getElementsByTagName('tr');
-    for (var i = 0; i < trs.length; i++) {
-      var td = trs[i].getElementsByClassName('col-email')[0];
-      if (td && td.textContent.toLowerCase() === query) {
-        var bgOri = trs[i].style.backgroundColor;
-        trs[i].style.backgroundColor = "#b3d4fc"; 
-        trs[i].scrollIntoView({behavior: "smooth", block: "center"});
+      // Simulasi render 50 baris data per halaman
+      for (let i = 1; i <= 50; i++) {
+        const tr = document.createElement('tr');
         
-        setTimeout(() => { 
-          trs[i].style.backgroundColor = trs[i].classList.contains("highlight") ? "#ffff00" : ""; 
-        }, 2000);
-        break;
+        // Menentukan apakah baris ini adalah "Last Cek"
+        if (i === lastCekRowId) {
+          tr.classList.add('row-last-cek'); // Tambahkan class khusus
+        }
+
+        tr.innerHTML = `
+          <td>${i}</td>
+          <td>Data pesan dari ${email} (Halaman ${currentPage})</td>
+          <td>${i === lastCekRowId ? 'Terakhir Dicek' : 'Belum'}</td>
+          <td><input type="checkbox"></td>
+        `;
+        tbody.appendChild(tr);
       }
-    }
-  }, 100);
-}
 
-/* --- PERBAIKAN: LAST CEK MENAMPILKAN BARIS KE-4 DARI ATAS --- */
-function keCekTerakhir() {
-  if (!isGenerated) return;
-
-  var targetIdx = lastCheckedIndex;
-  
-  if (!checkedItems.has(targetIdx)) {
-      if (checkedItems.size === 0) {
-          alert("Belum ada email yang dicentang.");
-          return;
-      }
-      targetIdx = Math.max(...Array.from(checkedItems));
-  }
-
-  var elLim = document.getElementById('lim').value;
-  var t = hitungTotal();
-  var itemsPerPage = elLim === "all" ? t : parseInt(elLim);
-  var targetPage = Math.floor(targetIdx / itemsPerPage) + 1;
-
-  if (currentPage !== targetPage) {
-    tampilkanHalaman(targetPage);
-  }
-
-  var targetEmail = formatEmail(targetIdx);
-
-  setTimeout(() => {
-    var container = document.querySelector('.table-container');
-    var trs = document.getElementById('badan-tabel').getElementsByTagName('tr');
-    for (var i = 0; i < trs.length; i++) {
-      var td = trs[i].getElementsByClassName('col-email')[0];
-      if (td && td.textContent === targetEmail) {
-        var bgOri = trs[i].style.backgroundColor;
-        trs[i].style.backgroundColor = "#b3d4fc";
-        
-        // Posisikan target berada di baris ke-4 (offset 3 baris di atasnya)
-        var offsetIndex = Math.max(0, i - 3);
-        container.scrollTo({
-          top: trs[offsetIndex].offsetTop,
-          behavior: "smooth"
-        });
-        
+      // HANYA jika load online, lakukan auto scroll ke last cek
+      if (isOnlineLoad) {
         setTimeout(() => {
-          trs[i].style.backgroundColor = trs[i].classList.contains("highlight") ? "#ffff00" : "";
-        }, 2000);
-        break;
+          scrollToLastCek();
+        }, 100); // Jeda sedikit agar browser selesai menggambar tabel
       }
     }
-  }, 100);
-}
 
-function bukaModalImpor() { 
-  document.getElementById('modalOverlay').style.display = 'block';
-  document.getElementById('modalImpor').style.display = 'block';
-  var curEmail = document.getElementById('e').value.trim();
-  document.getElementById('inputImporBase').value = curEmail; 
-  document.getElementById('areaImpor').value = ''; 
-}
-
-function prosesImpor() {
-  var baseInput = document.getElementById('inputImporBase').value.trim().toLowerCase();
-  if (baseInput === "") { alert("Masukkan email dasar terlebih dahulu."); return; }
-  if (baseInput.indexOf("@") === -1) baseInput += "@gmail.com";
-  
-  var parts = baseInput.split("@");
-  if (parts[1] !== "gmail.com") { alert("Alamat email harus berakhiran @gmail.com"); return; }
-  
-  var bName = parts[0].replace(/\./g, '');
-  var dName = parts[1];
-  if (bName.length < 2) { alert("Nama email terlalu pendek."); return; }
-
-  var teks = document.getElementById('areaImpor').value;
-  var lines = teks.split('\n').map(function(line) {
-    return line.trim().toLowerCase();
-  }).filter(function(line) {
-    return line !== "";
-  });
-  
-  var t = Math.pow(2, bName.length - 1);
-  if (t > 1000000 && !confirm("Total kombinasi sangat besar (" + t + " email). Proses pencocokan mungkin memakan waktu beberapa detik. Lanjut?")) {
-    return;
-  }
-  
-  var uncheckedIndices = new Set();
-  for (var i = 0; i < lines.length; i++) {
-    var idx = getEmailIndex(lines[i], bName, dName);
-    if (idx !== -1) {
-      uncheckedIndices.add(idx);
+    // Aksi: Load Data Online (Memicu Auto Scroll)
+    function loadDataOnline() {
+      // Panggil render dengan parameter true (isOnlineLoad = true)
+      renderTableData(true);
     }
-  }
 
-  baseName = bName;
-  domain = dName;
-  var newEmail = baseName + "@" + domain;
-  
-  document.getElementById('e').value = newEmail;
-  currentDisplayedEmail = newEmail;
-  storageKey = baseName + "_" + domain.replace('.', '_'); 
-
-  checkedItems.clear();
-  for (var k = 0; k < t; k++) {
-    if (!uncheckedIndices.has(k)) {
-      checkedItems.add(k);
+    // Aksi: Cek List (TIDAK memicu Auto Scroll)
+    function aksiCekList() {
+      // Misalnya hanya memproses checkbox yang dicentang
+      alert("Aksi Cek List dieksekusi. Tidak melakukan auto-scroll.");
+      // Jika butuh render ulang, panggil renderTableData(false)
     }
-  }
 
-  lastCheckedIndex = checkedItems.size > 0 ? Math.max(...Array.from(checkedItems)) : -1;
+    // Fungsi: Scroll ke Last Cek (Posisi baris ke-4 dari atas)
+    function scrollToLastCek() {
+      const container = document.getElementById('table-container');
+      const targetRow = document.querySelector('.row-last-cek');
 
-  isGenerated = true;
-  currentPage = 1;
-  
-  simpanDataKeMemori(); 
-  tampilkanHalaman(currentPage);
-  tutupSemuaModal();
-  
-  alert("Sinkronisasi Selesai!\n\nTotal Kombinasi Email: " + t + "\nEmail Sisa (Belum Dicentang): " + uncheckedIndices.size + "\nEmail Digunakan (Otomatis Dicentang): " + checkedItems.size);
-}
+      if (container && targetRow) {
+        const rowHeight = targetRow.offsetHeight;
+        // Kita kurangi tinggi header tabel agar perhitungan tepat
+        const headerHeight = document.querySelector('thead').offsetHeight; 
+        
+        // Kalkulasi: Posisi Baris - (3 baris di atasnya) - Tinggi Header
+        const targetTop = targetRow.offsetTop;
+        const scrollToPosition = targetTop - (3 * rowHeight) - headerHeight;
 
-function salinDiamDiam(teks) {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(teks).catch(function(){ salinFallback(teks); });
-  } else {
-    salinFallback(teks);
-  }
-}
-
-function salinFallback(teks) {
-  var ta = document.createElement("textarea");
-  ta.value = teks;
-  ta.style.position = "fixed"; 
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand("copy"); } catch (e) {}
-  document.body.removeChild(ta);
-}
-
-function eksporSesi() {
-  if (!isGenerated) { alert("Silakan Generate atau Impor data terlebih dahulu!"); return; }
-  var dataSesi = { email: currentDisplayedEmail, limit: document.getElementById('lim').value, page: currentPage, checked: Array.from(checkedItems) };
-  var blob = new Blob([JSON.stringify(dataSesi)], { type: "application/json" });
-  var a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "Sesi_GmailDot_" + baseName + ".json";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
-}
-
-function imporSesi(event) {
-  var file = event.target.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      var dataSesi = JSON.parse(e.target.result);
-      document.getElementById('lim').value = dataSesi.limit || "100";
-      checkedItems = new Set(dataSesi.checked || []);
-      isGenerated = true; currentPage = dataSesi.page || 1;
-      document.getElementById('e').value = dataSesi.email; currentDisplayedEmail = dataSesi.email;
-      if(validasi()) {
-        lastCheckedIndex = checkedItems.size > 0 ? Math.max(...Array.from(checkedItems)) : -1;
-        simpanDataKeMemori(); tampilkanHalaman(currentPage); alert("Data Sesi berhasil dimuat!");
+        container.scrollTo({
+          top: Math.max(0, scrollToPosition), // Tidak boleh minus
+          behavior: 'smooth'
+        });
+      } else {
+        alert("Baris Last Cek tidak ditemukan di halaman ini.");
       }
-    } catch (err) { alert("Gagal membaca file."); }
-    document.getElementById('fileImpor').value = "";
-  };
-  reader.readAsText(file);
-}
-
-function unduhFile(namaFile, konten, tipeMedia) {
-  var a = document.createElement("a"); var blob = new Blob([konten], { type: tipeMedia });
-  a.href = URL.createObjectURL(blob); a.download = namaFile;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); 
-}
-
-function txt() {
-  if (!validasi()) return; var t = hitungTotal();
-  if (t === 0) { alert("Tidak ada data untuk diunduh."); return; }
-  var a = []; for (var k = 0; k < t; k++) a.push(formatEmail(k));
-  unduhFile("gmail_dot_" + baseName + ".txt", a.join("\n"), "text/plain");
-}
-
-function csv() {
-  if (!validasi()) return; var t = hitungTotal();
-  if (t === 0) { alert("Tidak ada data untuk diunduh."); return; }
-  var a = ["email"]; for (var k = 0; k < t; k++) a.push(formatEmail(k));
-  unduhFile("gmail_dot_" + baseName + ".csv", a.join("\n"), "text/csv");
-}
-
-function buatTombolPaginasi(totalPages, activePage) {
-  var container = document.getElementById('paginasi');
-  container.innerHTML = ""; 
-  
-  if (totalPages > 1) {
-    var btnPrev = document.createElement('button');
-    btnPrev.textContent = "Prev";
-    btnPrev.disabled = (activePage === 1);
-    btnPrev.onclick = function() { tampilkanHalaman(activePage - 1); };
-    container.appendChild(btnPrev);
-
-    for (let i = Math.max(1, activePage - 2); i <= Math.min(totalPages, activePage + 2); i++) {
-      let btnNum = document.createElement('button');
-      btnNum.textContent = i;
-      if (i === activePage) btnNum.className = "active";
-      btnNum.onclick = function() { tampilkanHalaman(i); };
-      container.appendChild(btnNum);
     }
 
-    var btnNext = document.createElement('button');
-    btnNext.textContent = "Next";
-    btnNext.disabled = (activePage === totalPages);
-    btnNext.onclick = function() { tampilkanHalaman(activePage + 1); };
-    container.appendChild(btnNext);
-  }
+    // Fungsi: Pindah Halaman (Otomatis Scroll ke Atas)
+    function changePage(page) {
+      if (page === 'prev') {
+        currentPage = currentPage > 1 ? currentPage - 1 : 1;
+      } else if (page === 'next') {
+        currentPage++;
+      } else {
+        currentPage = page;
+      }
 
-  if (isGenerated) {
-    var btnLastCheck = document.createElement('button');
-    btnLastCheck.textContent = "Last Cek";
-    btnLastCheck.style.marginLeft = "auto";
-    btnLastCheck.style.backgroundColor = "#fbbc05"; 
-    btnLastCheck.style.color = "#333";
-    btnLastCheck.style.fontWeight = "bold";
-    btnLastCheck.style.border = "1px solid #d4a000";
-    btnLastCheck.onclick = keCekTerakhir;
-    container.appendChild(btnLastCheck);
-  }
-}
-</script>
+      // Render ulang data (tapi jangan auto-scroll ke last cek, karena bukan load awal)
+      renderTableData(false);
+
+      // LANGSUNG SCROLL TABEL KE PALING ATAS
+      const container = document.getElementById('table-container');
+      if (container) {
+        container.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
+    }
+  </script>
+
 </body>
 </html>
